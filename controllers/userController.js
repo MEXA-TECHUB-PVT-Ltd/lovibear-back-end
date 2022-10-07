@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs");
 const userPhoneOTPVerificationModel = require("../models/userPhoneOtpVerificationModel");
 const mongoose = require("mongoose");
 
+
+
 const client = require("twilio")(process.env.AccountID, process.env.AuthTokken);
 
 exports.getAllUsers = (req, res) => {
@@ -197,6 +199,7 @@ exports.updateUserProfile = (req, res) => {
 };
 
 exports.postEnterNumber = (req, res) => {
+
   const phoneNumber = req.body.phoneNumber;
 
   const otp = `${Math.floor(1000 + Math.random() * 9000)}`;
@@ -205,9 +208,8 @@ exports.postEnterNumber = (req, res) => {
 
   userModel.findOne({ phoneNumber: phoneNumber }, async (err, data) => {
     console.log(data)
-    if (data) {
-      obj.data = data;
-      obj.status = "Already Exists";
+    if (!data) {
+      obj.status = "user with this phone Number not exist";
       res.json(obj);
     } else {
       const result = await userPhoneOTPVerificationModel.findOne({
@@ -470,3 +472,78 @@ exports.getUsersWithinRadius = async (req, res) => {
 //   { $limit: parseInt}
 
 // ])
+
+exports.updateLocation =async  (req,res)=>{
+  
+  const userId= req.body.userId; 
+  const long=req.body.long;
+  const lat= req.body.lat;
+
+  try{
+     userModel.findOneAndUpdate({_id:userId}
+      ,
+      {
+        $set: {
+          "location.coordinates": [req.body.long, req.body.lat],
+        },
+      },
+      {
+        new:true,
+      },
+      function(err,result){
+        if(result){
+          res.json({
+            message:"location has updated successfully",
+            result: result,
+            statusCode:201
+
+          })
+        }
+        else{
+          res.json({
+            message:"location could not be updated , May be this user Id not exist",
+            statusCode:404
+          })
+        }
+      }
+      )
+ 
+}
+catch(error){
+  res.json({
+    message:"Error occurred while updating location",
+    Error:error,
+    errorMessage:error.message
+    
+  })
+}
+}
+
+exports.getUserByName = async (req,res)=>{
+  const name = req.query.name;
+  
+  try{
+    const result = await  userModel.find( { userName: { $regex: name, $options: "i" } })
+    if(result){
+      res.json({
+        message: "Result fetched",
+        result: result,
+        statusCode: 200
+      })
+    }
+    else{
+      res.json({
+        message:"Result is null",
+      })
+    }
+  }
+  catch(err){
+    res.json({
+      message:"Error occurred while fetching result",
+      statusCode:404,
+      Error:err.message
+    })
+  }
+ 
+
+}

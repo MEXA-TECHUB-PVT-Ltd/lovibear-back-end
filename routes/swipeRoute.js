@@ -9,6 +9,8 @@ router.put("/leftSwipeUser" ,controller.leftSwipeUser);
 router.delete("/deleteUserSwipe/:userId" ,controller.deleteUserSwipe);
 router.delete("/deleteUserSwipe/:userId" ,controller.deleteUserSwipe);
 router.get("/match/:user1/:user2" ,controller.getMatch);
+router.delete("/deleteSwipeByUsers_id" ,controller.deleteUserSwipeByUsers_id);
+
 // router.get("/getPostsOfUser/:userId" ,controller.getPostsOfUser);
 // router.delete("/deletePost/:postId" ,controller.deletePost);
 // router.put("/updatePost/" ,controller.updatePost);

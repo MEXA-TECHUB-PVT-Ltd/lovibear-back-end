@@ -1,14 +1,23 @@
 const mongoose=require("mongoose")
 const swipeModel = require("../models/swipesModel")
-const matchesModel= require("../models/matchesModel")
+const matchesModel= require("../models/matchesModel");
+const swipesModel = require("../models/swipesModel");
+const { ExportCustomJobInstance } = require("twilio/lib/rest/bulkexports/v1/export/exportCustomJob");
+
 
 exports.rightSwipeUser=async (req,res)=>{
     
     const swipedBy = req.body.swipedBy;
     const swipedUser = req.body.swipedUser;
 
+    const response= {}
 
-    checkMatch(swipedBy,swipedUser);
+      const matchResult= await checkMatch(swipedBy,swipedUser);
+      console.log(matchResult);
+      if(matchResult==true){
+        console.log("match found");
+        response.matchFound = true;
+      }
 
       swipeModel.findOneAndUpdate({swipedBy:swipedBy , swipedUser:swipedUser} ,
         {
@@ -23,9 +32,10 @@ exports.rightSwipeUser=async (req,res)=>{
         function(err,result){
             if(!err){
                 if(result){
+                    response.result = result;
                     res.status(200).json({
                         message:"user has successfully right swiped",
-                        data:result
+                        result:response
                     })
                 }
                 else{
@@ -41,6 +51,7 @@ exports.rightSwipeUser=async (req,res)=>{
 
     
 }
+
 exports.getUserRightSwipes= (req,res)=>{
     const userId = req.params.userId;
 
@@ -151,6 +162,44 @@ exports.deleteUserSwipe= (req,res)=>{
     )
 }
 
+exports.deleteUserSwipeByUsers_id = async (req,res)=>{
+
+    const swipedBy = req.query.swipedBy;
+    const swipedUser = req.query.swipedUser;
+
+
+
+    swipesModel.deleteOne({swipedBy:swipedBy, swipedUser:swipedUser} , async function(err,result){
+          try{
+            console.log(result)
+            if(result){
+
+                const matchFind = await matchesModel.findOneAndDelete({users:{ $all: [ swipedBy , swipedUser ] }})
+                if(matchFind){
+                    console.log("match deleted between these users")
+                }
+                
+                res.json({
+                    message:"deleted successfully",
+                    result:result,
+                    statusCode:200
+                })
+            }
+            else{
+                res.json({message: "could not delete swipe "})
+            }
+          }
+          catch(err){
+            res.json({
+                message: "Error occurred while deleting swipe",
+                Error:err,
+                errorMessage:err.message
+            })
+          }
+    })
+}
+
+
 exports.getMatch= async (req,res)=>{
 
     const user1= req.params.user1;
@@ -167,7 +216,6 @@ exports.getMatch= async (req,res)=>{
             message:"Match found between users",
             matchStatus:true,
         })
-
     }
     else{
         res.status(404).json({

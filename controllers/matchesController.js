@@ -197,3 +197,31 @@ exports.deleteMatch = (req,res)=>{
 //         }
 //     })
 // }
+
+exports.getUserMatches = async (req,res)=>{
+
+    const userId= req.params.userId;
+
+    const result= await matchesModel.find({users:{$in:[userId]}})
+    try{
+        if(result){
+            res.json({
+                message:"All matches of this user is:",
+                result:result,
+                statusCode:200
+            })
+        }
+        else{
+            res.json({
+                message:"could not find matches , result is null"
+            })
+        }
+    }
+    catch(err){
+        res.json({
+            message: "error occurred while fetching user matches",
+            error:err,
+            errorMessage:err.message
+        })
+    }
+}

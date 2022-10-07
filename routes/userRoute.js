@@ -7,7 +7,9 @@ const jwt = require("jsonwebtoken");
 const auth = require("../middlewares/auth");
 const mongoose = require("mongoose");
 
+
 const controller = require("../controllers/userController");
+const userLogsModel= require("../models/userLogsModels")
 
 router.get("/allUsers", controller.getAllUsers);
 router.get("/specificUser/:userId", controller.getSpecificUser);
@@ -18,7 +20,8 @@ router.put("/updateUserProfile", controller.updateUserProfile);
 router.post("/phOTP", controller.postEnterNumber);
 router.post("/verifyOTP", controller.verifyOTP);
 router.post("/usersInRadius", controller.getUsersWithinRadius);
-
+router.put("/updateUserLocation", controller.updateLocation);
+router.get("/getUserByName", controller.getUserByName);
 
 router.post("/register", async (req, res) => {
   console.log("in post");
@@ -147,6 +150,26 @@ router.post("/login", async (req, res) => {
       token: token,
       userDetails: result,
     });
+   
+
+    //saving user logs
+    const userLog= new userLogsModel({
+      _id:mongoose.Types.ObjectId(),
+      user_id:user._id,
+      ip:req.body.ip,
+      country:req.body.country,
+      logType:"login"
+    })
+
+    userLog.save(function(err,result){
+      if(result){
+        console.log("logs maintained")
+      }
+      else{
+        console.log("Error in saving logs")
+      }
+    })
+
   } else if (req.body.phoneNumber) {
     const user = await userModel.findOne({ phoneNumber: req.body.phoneNumber });
     if (!user) return res.status(400).send("phoneNumber or password is wrong");
@@ -174,6 +197,26 @@ router.post("/login", async (req, res) => {
       token: token,
       userDetails: result,
     });
+
+    const userLog= new userLogsModel({
+      _id:mongoose.Types.ObjectId(),
+      user_id:user._id,
+      ip:req.body.ip,
+      country:req.body.country,
+      logType:"login"
+    })
+
+
+    //saving user Logs
+    userLog.save(function(err,result){
+      if(result){
+        console.log("logs maintained")
+      }
+      else{
+        console.log("Error in saving logs")
+      }
+    })
+
   } else {
     res.json("Only email or password can be use for login along with password");
   }
@@ -201,6 +244,9 @@ const loginSchema = Joi.object({
   email: Joi.string().min(6).email(),
   password: Joi.string().min(6).required(),
   phoneNumber: Joi.string(),
+  ip:Joi.string(),
+  country: Joi.string(),
+  logType: Joi.string()
 });
 
 module.exports = router;
