@@ -2,6 +2,8 @@ const userModel = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const userPhoneOTPVerificationModel = require("../models/userPhoneOtpVerificationModel");
 const mongoose = require("mongoose");
+const UserOTPVerificationModel = require("../models/userOTPVerificationModel");
+const cloudinary = require("../utils/cloudinary")
 
 
 
@@ -29,8 +31,21 @@ exports.getSpecificUser = (req, res) => {
   });
 };
 
-exports.deleteUser = (req, res) => {
+exports.deleteUser = async (req, res) => {
   const userId = req.params.userId;
+
+  try{
+    const result= await userModel.findOne({_id: userId});
+    if(result){
+        await cloudinary.uploader.destroy(result.profileImage.public_id)
+    }else{
+        console.log("not found this user ")
+    }
+  }
+  catch(err){console.log(err)}
+
+
+
   userModel.deleteOne({ _id: userId }, function (err, foundResult) {
     try {
       res.json(foundResult);
@@ -147,9 +162,39 @@ exports.blockStatusChange = (req, res) => {
   );
 };
 
-exports.updateUserProfile = (req, res) => {
+exports.updateUserProfile =  async (req, res) => {
   const userId = req.body.userId;
-  const location = req.body.location;
+  
+
+  try{
+    const result= await userModel.findOne({_id: userId});
+    if(result){
+        await cloudinary.uploader.destroy(result.profileImage.public_id)
+    }else{
+        console.log("not found this user ")
+    }
+}
+catch(err){console.log(err)}
+//----------------------------------------------
+
+// uploading new picture in to cloudinary
+let userPic;
+try{
+    if(req.file){
+        console.log(req.file)
+        const c_result = await cloudinary.uploader.upload(req.file.path)
+       console.log(c_result.secure_url)
+       userPic= {
+        userPicUrl:c_result.secure_url,
+        public_id:c_result.public_id
+       };
+    }
+    else{
+        userPic= {}
+    }
+    
+}catch(err)
+{console.log(err)}
 
   if (userId !== null && typeof userId !== "undefined") {
     userModel.findByIdAndUpdate(
@@ -157,7 +202,7 @@ exports.updateUserProfile = (req, res) => {
       {
         gender: req.body.gender,
         dateOfBirth: req.body.dateOfBirth,
-        profileImage: req.body.profileImage,
+        profileImage: req.body.userPic,
         profession: req.body.profession,
         fcmToken: req.body.fcmToken,
         userName: req.body.userName,

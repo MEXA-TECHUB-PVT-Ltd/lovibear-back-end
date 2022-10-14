@@ -1,6 +1,11 @@
+
+
 const router = require("express").Router();
 const userModel = require("../models/userModel");
 const bcrypt = require("bcryptjs");
+const cloudinary = require("../utils/cloudinary")
+const upload = require("../middlewares/multer")
+
 
 const Joi = require("joi");
 const jwt = require("jsonwebtoken");
@@ -16,16 +21,17 @@ router.get("/specificUser/:userId", controller.getSpecificUser);
 router.delete("/deleteUser/:userId", controller.deleteUser);
 router.put("/updateUserPassword", controller.updatePassword);
 router.put("/changeUserBlockStatus", controller.blockStatusChange);
-router.put("/updateUserProfile", controller.updateUserProfile);
+router.put("/updateUserProfile", upload.single("profileImage"), controller.updateUserProfile);
 router.post("/phOTP", controller.postEnterNumber);
 router.post("/verifyOTP", controller.verifyOTP);
 router.post("/usersInRadius", controller.getUsersWithinRadius);
 router.put("/updateUserLocation", controller.updateLocation);
 router.get("/getUserByName", controller.getUserByName);
 
-router.post("/register", async (req, res) => {
+router.post("/register", upload.single("profileImage"),async (req, res) => {
   console.log("in post");
   const { error } = registerSchema.validate(req.body);
+  console.log(req.body)
   if (error) return res.status(400).send(error.details[0].message);
   //Check if the user is already in the db
   const email = await userModel.findOne({ email: req.body.email });
@@ -36,6 +42,26 @@ router.post("/register", async (req, res) => {
   //hash passwords
   const salt = await bcrypt.genSalt(10);
   const hashPassword = await bcrypt.hash(req.body.password, salt);
+  console.log(hashPassword)
+
+
+  var userPic;
+        try{
+            if(req.file){
+                console.log(req.file)
+                const c_result = await cloudinary.uploader.upload(req.file.path)
+               console.log(c_result.secure_url)
+               userPic= {
+                userPicUrl:c_result.secure_url,
+                public_id:c_result.public_id
+               };
+            }
+            else{
+                userPic= {}
+            }
+            
+        }catch(err)
+        {console.log(err)}
 
   if (req.body.phoneNumber) {
     
@@ -50,14 +76,15 @@ router.post("/register", async (req, res) => {
           password: hashPassword,
           gender: req.body.gender,
           dateOfBirth: req.body.dateOfBirth,
-          profileImage: req.body.profileImage,
+          profileImage: userPic,
           profession: req.body.profession,
-          location: req.body.location,
+          location: JSON.parse(req.body.location),
           fcmToken: req.body.fcmToken,
           phoneNumber: req.body.phoneNumber,
           signupType: req.body.signupType,
           userName: req.body.userName,
           userEmailAddress: req.body.userEmailAddress,
+          
         });
     
         try {
@@ -86,9 +113,9 @@ router.post("/register", async (req, res) => {
         password: hashPassword,
         gender: req.body.gender,
         dateOfBirth: req.body.dateOfBirth,
-        profileImage: req.body.profileImage,
+        profileImage: userPic,
         profession: req.body.profession,
-        location: req.body.location,
+        location:JSON.parse(req.body.location),
         fcmToken: req.body.fcmToken,
         signupType: req.body.signupType,
         userName: req.body.userName,
@@ -232,9 +259,8 @@ const registerSchema = Joi.object({
   signupType: Joi.string(),
   gender: Joi.string(),
   dateOfBirth: Joi.string(),
-  profileImage: Joi.string(),
   profession: Joi.string(),
-  location: Joi.object(),
+  location: Joi.string(),
   userName: Joi.string(),
   fcmToken: Joi.string(),
   userEmailAddress: Joi.string()

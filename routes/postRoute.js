@@ -1,12 +1,13 @@
 
 const router = require("express").Router();
 const controller = require("../controllers/postController");
+const upload = require("../middlewares/multer")
 
-router.post("/createPost" ,controller.createPost);
+router.post("/createPost", upload.array("postImages") ,controller.createPost);
 router.get("/getAllPosts" ,controller.getAllPosts);
 router.get("/getPostsOfUser/:userId" ,controller.getPostsOfUser);
 router.delete("/deletePost/:postId" ,controller.deletePost);
-router.put("/updatePost/" ,controller.updatePost);
+router.put("/updatePost/" , upload.array("postImages"),controller.updatePost);
 
 
 module.exports = router;

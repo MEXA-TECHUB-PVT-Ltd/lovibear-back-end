@@ -5,7 +5,7 @@ _id:mongoose.Schema.Types.ObjectId,
   userName: String,
   signupType:{
     type:String,
-    enum:['google', 'facebook', 'phoneNumber'],
+    enum:['google', 'facebook', 'email' ,'phoneNumber'],
   },
   email: {
     type: String,
@@ -26,7 +26,7 @@ _id:mongoose.Schema.Types.ObjectId,
   },
 
   profileImage:{
-    type:String,
+    type:Object,
   },
 
   profession:{

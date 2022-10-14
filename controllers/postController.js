@@ -1,16 +1,28 @@
 const mongoose=require("mongoose")
 const postModel = require("../models/postModel")
+const cloudinary = require("../utils/cloudinary")
 
-exports.createPost=(req,res)=>{
+exports.createPost= async(req,res)=>{
     
     const postImages=req.body.postImages;
     const userId=req.body.userId;
 
-    if(postImages.length > 0 ){
+    var pathsArray = [];
+    
+    for (const file of req.files){
+        const {path}= file
+        const c_result = await cloudinary.uploader.upload(path)
+         pathsArray.push({
+           image_url: c_result.secure_url,
+            public_id:c_result.public_id
+         })
+
+    }
+    console.log(pathsArray)
 
         const post= new postModel({
             _id: mongoose.Types.ObjectId(),
-            postImages: postImages,
+            postImages: pathsArray,
             userId:userId
         })
 
@@ -35,13 +47,7 @@ exports.createPost=(req,res)=>{
             }
             
         })
-    }
-    else
-    {
-        res.json({
-            message:"Give at least one image to create post"
-        })
-    }
+    
     
 }
 
@@ -99,8 +105,24 @@ exports.getPostsOfUser = (req,res)=>{
         })
 }
 
-exports.deletePost = (req,res)=>{
+exports.deletePost =async (req,res)=>{
     const postId = req.params.postId;
+
+    try{
+        const result= await postModel.findOne({_id:postId});
+     if(result){
+        let imagesArray = result.postImages;
+        imagesArray.forEach(element => {
+            cloudinary.uploader.destroy(element.public_id)
+        });
+   }
+   else{
+    console.log("post with this id not found")
+   }
+    }
+    catch(err){
+        console.log(err)
+    }
 
     postModel.deleteOne({_id:postId} , function(err,result){
         try{
@@ -131,12 +153,43 @@ exports.deletePost = (req,res)=>{
     })
 }
 
-exports.updatePost = (req,res)=>{
+exports.updatePost = async (req,res)=>{
     const postId = req.body.postId;
-    const postImages= req.body.postImages;
+    
+    if(req.files){
+        try{
+        const result= await postModel.findOne({_id:postId});
+         if(result){
+            let imagesArray = result.postImages;
+            imagesArray.forEach(element => {
+                cloudinary.uploader.destroy(element.public_id)
+            });
+       }
+       else{
+        console.log("post with this id not found")
+       }
+        }
+        catch(err){
+            console.log(err)
+        }
+       
+    }
+    
+
+    var pathsArray = [];
+    for (const file of req.files){
+        const {path}= file
+        const c_result = await cloudinary.uploader.upload(path)
+         pathsArray.push({
+           image_url: c_result.secure_url,
+            public_id:c_result.public_id
+         })
+
+    }
+    console.log(pathsArray)
 
 
-    postModel.findOneAndUpdate({_id:postId} ,{postImages:postImages},{new:true}, function(err,result){
+    postModel.findOneAndUpdate({_id:postId} ,{postImages:pathsArray},{new:true}, function(err,result){
         try{
                 if(result){
                     res.status(200).send({
