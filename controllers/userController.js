@@ -636,10 +636,40 @@ exports.getUserByName = async (req,res)=>{
           userName: { $regex: name, $options: "i" }
         },
       },
+      {
+        $set: {
+          age: { $subtract: [new Date(), "$dateOfBirth"]}
+          },
+      },
+      {
+        $project: {
+          date: "$dateOfBirth",
+          Age: {
+            $divide: [
+              "$age",
+              365 * 24 * 60 * 60 * 1000,
+            ],
+          },
+          document: "$$ROOT"
+        },
+      },
+      
      
     ])
 
-    res.json(result)
+    if (result){
+      res.json({
+        message: "Successfully fetched records",
+        result: result,
+        statusCode:200
+      })
+    }
+    else{
+      res.json({
+        message: "Could not find records"
+      })
+    }
+   
   //   const result = await  userModel.find( { userName: { $regex: name, $options: "i" } })
   //   if(result){
   //     res.json({
