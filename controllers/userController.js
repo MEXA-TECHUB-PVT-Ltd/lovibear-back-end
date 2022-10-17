@@ -169,6 +169,7 @@ exports.updateUserProfile =  async (req, res) => {
   try{
     const result= await userModel.findOne({_id: userId});
     if(result){
+      console.log(result.profileImage.public_id)
         await cloudinary.uploader.destroy(result.profileImage.public_id)
     }else{
         console.log("not found this user ")
@@ -178,7 +179,7 @@ catch(err){console.log(err)}
 //----------------------------------------------
 
 // uploading new picture in to cloudinary
-let userPic;
+var userPic;
 try{
     if(req.file){
         console.log(req.file)
@@ -188,59 +189,102 @@ try{
         userPicUrl:c_result.secure_url,
         public_id:c_result.public_id
        };
-    }
+
+
+       // if image is reveived
+       if (userId !== null && typeof userId !== "undefined") {
+        userModel.findByIdAndUpdate(
+          userId,
+          {
+            gender: req.body.gender,
+            dateOfBirth: req.body.dateOfBirth,
+            profileImage: userPic,
+            profession: req.body.profession,
+            fcmToken: req.body.fcmToken,
+            userName: req.body.userName,
+            userEmailAddress: req.body.userEmailAddress,
+            phoneNumber: req.body.phoneNumber,
+            email: req.body.email,
+            signupType: req.body.signupType,
+            $set: {
+              "location.coordinates": [req.body.long, req.body.lat],
+            },
+          },
+          {
+            new: true,
+          },
+          function (err, result) {
+            if (!err) {
+              if (result !== null && typeof result !== "undefined") {
+                res.json({
+                  message: "Updated successfully",
+                  updatedResult: result,
+                });
+              } else {
+                res.json({
+                  message:
+                    "couldn't update , Record with this userId  may be not found",
+                });
+              }
+            } else {
+              res.json({
+                message: "Error updating",
+                Error: err.message,
+              });
+            }
+          }
+        );
+      } else {
+        res.json("userId be null or undefined");
+      }
+        }
     else{
-        userPic= {}
+      userModel.findByIdAndUpdate(
+        userId,
+        {
+          gender: req.body.gender,
+          dateOfBirth: req.body.dateOfBirth,
+          profession: req.body.profession,
+          fcmToken: req.body.fcmToken,
+          userName: req.body.userName,
+          userEmailAddress: req.body.userEmailAddress,
+          phoneNumber: req.body.phoneNumber,
+          email: req.body.email,
+          signupType: req.body.signupType,
+          $set: {
+            "location.coordinates": [req.body.long, req.body.lat],
+          },
+        },
+        {
+          new: true,
+        },
+        function (err, result) {
+          if (!err) {
+            if (result !== null && typeof result !== "undefined") {
+              res.json({
+                message: "Updated successfully",
+                updatedResult: result,
+              });
+            } else {
+              res.json({
+                message:
+                  "couldn't update , Record with this userId  may be not found",
+              });
+            }
+          } else {
+            res.json({
+              message: "Error updating",
+              Error: err.message,
+            });
+          }
+        }
+      );
     }
     
 }catch(err)
 {console.log(err)}
 
-  if (userId !== null && typeof userId !== "undefined") {
-    userModel.findByIdAndUpdate(
-      userId,
-      {
-        gender: req.body.gender,
-        dateOfBirth: req.body.dateOfBirth,
-        profileImage: req.body.userPic,
-        profession: req.body.profession,
-        fcmToken: req.body.fcmToken,
-        userName: req.body.userName,
-        userEmailAddress: req.body.userEmailAddress,
-        phoneNumber: req.body.phoneNumber,
-        email: req.body.email,
-        signupType: req.body.signupType,
-        $set: {
-          "location.coordinates": [req.body.long, req.body.lat],
-        },
-      },
-      {
-        new: true,
-      },
-      function (err, result) {
-        if (!err) {
-          if (result !== null && typeof result !== "undefined") {
-            res.json({
-              message: "Updated successfully",
-              updatedResult: result,
-            });
-          } else {
-            res.json({
-              message:
-                "couldn't update , Record with this userId  may be not found",
-            });
-          }
-        } else {
-          res.json({
-            message: "Error updating",
-            Error: err.message,
-          });
-        }
-      }
-    );
-  } else {
-    res.json("userId be null or undefined");
-  }
+ 
 };
 
 exports.postEnterNumber = (req, res) => {
