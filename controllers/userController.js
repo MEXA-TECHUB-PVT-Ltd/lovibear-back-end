@@ -660,7 +660,7 @@ exports.getUserByName = async (req,res)=>{
     if (result){
       res.json({
         message: "Successfully fetched records",
-        result: result,
+        users: result,
         statusCode:200
       })
     }
