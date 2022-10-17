@@ -610,21 +610,49 @@ catch(error){
 
 exports.getUserByName = async (req,res)=>{
   const name = req.query.name;
+  const radiusInKm= req.query.radiusInKm
+  const long= req.body.long;
+  const lat= req.body.lat;
+
+  
+
+
   
   try{
-    const result = await  userModel.find( { userName: { $regex: name, $options: "i" } })
-    if(result){
-      res.json({
-        message: "Result fetched",
-        result: result,
-        statusCode: 200
-      })
-    }
-    else{
-      res.json({
-        message:"Result is null",
-      })
-    }
+
+
+    const result = await userModel.aggregate([
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [ long, lat ] },
+          distanceField: "dist.distance_km",
+           maxDistance:radiusInKm*1000 ,
+           includeLocs: "dist.location",
+           spherical: true
+       }
+      },
+      {
+        $match: {
+          userName: { $regex: name, $options: "i" }
+        },
+      },
+     
+    ])
+
+    res.json(result)
+  //   const result = await  userModel.find( { userName: { $regex: name, $options: "i" } })
+  //   if(result){
+  //     res.json({
+  //       message: "Result fetched",
+  //       result: result,
+  //       statusCode: 200
+  //     })
+  //   }
+  //   else{
+  //     res.json({
+  //       message:"Result is null",
+  //     })
+  //   }
   }
   catch(err){
     res.json({
@@ -636,3 +664,4 @@ exports.getUserByName = async (req,res)=>{
  
 
 }
+

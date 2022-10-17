@@ -26,7 +26,7 @@ router.post("/phOTP", controller.postEnterNumber);
 router.post("/verifyOTP", controller.verifyOTP);
 router.post("/usersInRadius", controller.getUsersWithinRadius);
 router.put("/updateUserLocation", controller.updateLocation);
-router.get("/getUserByName", controller.getUserByName);
+router.post("/getUserByName", controller.getUserByName);
 
 router.post("/register", upload.single("profileImage"),async (req, res) => {
   console.log("in post");
