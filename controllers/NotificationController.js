@@ -72,7 +72,7 @@ exports.getNotificationsByType = (req,res) =>{
             receiverType: receiverType,
             name:userName,
             body: body,
-            image:profileImage,
+            image:profileImage.userPicUrl,
           });
 
           newNotification.save(function (err, result) {
