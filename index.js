@@ -6,6 +6,7 @@ const PORT = 3000;
 const socket = require("socket.io");
 
 const MessageModel = require("./models/messageModel")
+const ChatModel= require("./models/chatModel")
 
 const cors = require('cors');
 const { ActivityInstance } = require("twilio/lib/rest/taskrouter/v1/workspace/activity");
