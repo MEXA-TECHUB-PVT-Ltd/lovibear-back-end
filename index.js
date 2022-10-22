@@ -173,6 +173,7 @@ io.on("connection", (socket) => {
   socket.on("send-message", (data) => {
     const { receiverId } = data;
     const user = activeUsers.find((user) => user.userId === receiverId);
+    console.log("receiver found from active users : " + user.socketId)
     console.log("Sending from socket to :", receiverId)
     console.log("Data: ", data)
      
@@ -180,6 +181,7 @@ io.on("connection", (socket) => {
     const { chatId, senderId } = data;
     const text=data.text[0].text
     const message = new MessageModel({
+      _id:mongoose.Types.ObjectId(),
       chatId:chatId,
       user:{
         _id: senderId
