@@ -46,70 +46,9 @@ app.use("/api/admin" , require("./routes/adminRoute"))
 app.use("/api/userProfilePicBackup" , require("./routes/userProfilePicRoute"))
 app.use("/api/postsBackup" , require("./routes/userPostsBackupRoute"))
 app.use("/api/userLogs" , require("./routes/userLogsRoutes"))
+app.use("/chat", require("./routes/ChatRoute"));
+app.use("/message", require("./routes/MessageRoute"));
 
-
- app.post('/add-msg-socket', async(req, res,next) => {
-    try {
-        const { from, to, message } = req.body;
-        const data =  new MessageModel({
-          message: { text: message },
-          users: [from, to],
-          sender: from,
-        });
-        
-       const saveData= await data.save()
-    
-        if (saveData) return res.json({ msg: "Message added successfully." , result:saveData  , statusCode:201});
-        else return res.json({ msg: "Failed to add message to the database" });
-      } catch (ex) {
-        next(ex);
-      }
-})
-
-app.post('/get-msg-socket', (req, res, next) => {
-
-    try {
-        const { from, to } = req.body;
-        const messages = MessageModel.find({ users: {
-                    $all: [from, to],
-                }
-            }, (error, result) => {
-            if (error) {
-                res.send(error)
-            } else {
-                const projectedMessages = result.map((msg) => {
-                        return {
-                            fromSelf: msg.sender.toString() === from,
-                            message: msg.message.text,
-                        };
-                    });
-                    res.json(projectedMessages);
-            }
-        })
-     
-    } catch (ex) {
-        next(ex);
-    }
-})
-
-app.delete('/deleteMessage' ,async (req,res , next)=>{
-    try{
-        const messageId= req.params.messageId;
-        const result=MessageModel.deleteOne({_id:messageId})
-        if(result.deletedCount >0){
-            res.json({
-                message: "Message deleted successfully",
-                result:result
-            })
-        }
-    }
-    catch(err){
-        res.json({
-            message: "Error occurred while deleting message",
-            Error:err.message
-        })
-    }
-})
 
 app.post("/user/logout",(req,res)=>
 {
@@ -139,27 +78,105 @@ app.post("/user/logout",(req,res)=>
  
 })
 
-const server=app.listen(PORT, () => console.log(`Running server on port: ${PORT}`));
 
 
-const io = socket(server, {
-    cors: {
-      origin: "http://localhost:3000",
-      credentials: true,
-    },
+
+
+const server= app.listen(3000, function () {
+    console.log("server started on port 3000")
+})
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "http://localhost:3000",
+  },
+});
+
+let activeUsers = [];
+
+io.on("connection", (socket) => {
+  // add new User
+  socket.on("new-user-add", (newUserId) => {
+    // if user is not added previously
+    if (!activeUsers.some((user) => user.userId === newUserId)) {
+      activeUsers.push({ userId: newUserId, socketId: socket.id });
+      console.log("New User Connected", activeUsers);
+    }
+    // send all active users to new user
+    io.emit("get-users", activeUsers);
   });
+
   
-  global.onlineUsers = new Map();
-  io.on("connection", (socket) => {
-    global.chatSocket = socket;
-    socket.on("add-user", (userId) => {
-      onlineUsers.set(userId, socket.id);
-    });
-  
-    socket.on("send-msg", (data) => {
-      const sendUserSocket = onlineUsers.get(data.to);
-      if (sendUserSocket) {
-        socket.to(sendUserSocket).emit("msg-recieve", data.msg);
-      }
-    });
+
+
+  socket.on("disconnect", () => {
+    // remove user from active users
+    activeUsers = activeUsers.filter((user) => user.socketId !== socket.id);
+    console.log("User Disconnected", activeUsers);
+    // send all active users to all users
+    io.emit("get-users", activeUsers);
   });
+
+  // send message to a specific user
+
+
+  socket.on("chat-start" , (data)=>{
+    var {senderId ,receiverId} = data;
+    
+    const newChat = new ChatModel({
+      members: [senderId,receiverId],
+    });
+    
+      const result = newChat.save(function(err){
+
+        if(err){
+          console.log("error in chat")
+        }else{
+          console.log("successfully stored")
+          console.log(newChat)
+
+            ChatModel.findOne({
+            members: { $all: [senderId, receiverId]},
+          } ,(err,foundResult)=>{
+            if(foundResult){
+              console.log("This is chatId:" + foundResult._id)
+              let chatId= foundResult._id;
+              socket.emit("chatId-receive" , chatId)
+            }else{
+              console.log("error in getting")
+            }
+          });
+          
+        }
+      });
+
+ 
+
+  })
+  socket.on("send-message", (data) => {
+    const { receiverId } = data;
+    const user = activeUsers.find((user) => user.userId === receiverId);
+    console.log("Sending from socket to :", receiverId)
+    console.log("Data: ", data)
+     
+
+    const { chatId, senderId } = data;
+    const text=data.text[0].text
+    const message = new MessageModel({
+      chatId:chatId,
+      user:{
+        _id: senderId
+      },
+      text:text,
+    });
+      message.save(function(err){
+        if(!err){
+          console.log("Message has been stored in message database")
+        }else{
+          console.log("Error in storing messages");
+        }
+      })
+    if (user) {
+      io.to(user.socketId).emit("recieve-message", data);
+    }
+  });
+})

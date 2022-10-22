@@ -18,7 +18,7 @@ _id:mongoose.Schema.Types.ObjectId,
   },
   gender:{
     type: String,
-    enum: ['male', 'female' , 'preferNotToSay'],
+    enum: ['male', 'female' , 'preferNotToSay' , "transMen" , "transWomen"],
   },
 
   dateOfBirth:{
