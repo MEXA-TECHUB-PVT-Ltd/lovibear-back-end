@@ -10,6 +10,7 @@ const ChatModel= require("./models/chatModel")
 
 const cors = require('cors');
 const { ActivityInstance } = require("twilio/lib/rest/taskrouter/v1/workspace/activity");
+const { ConferenceInstance } = require("twilio/lib/rest/api/v2010/account/conference");
 
 
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -108,7 +109,6 @@ io.on("connection", (socket) => {
 
   
 
-
   socket.on("disconnect", () => {
     // remove user from active users
     activeUsers = activeUsers.filter((user) => user.socketId !== socket.id);
@@ -120,18 +120,32 @@ io.on("connection", (socket) => {
   // send message to a specific user
 
 
-  socket.on("chat-start" , (data)=>{
+  socket.on("chat-start" ,async(data)=>{
     var {senderId ,receiverId} = data;
-    
-    const newChat = new ChatModel({
-      members: [senderId,receiverId],
-    });
-    
-      const result = newChat.save(function(err){
 
-        if(err){
-          console.log("error in chat")
-        }else{
+    const checkResult =await ChatModel.findOne({
+      members: { $all: [senderId, receiverId] },
+    });
+
+    if(!checkResult){
+      const newChat = new ChatModel({
+        members: [senderId,receiverId],
+      });
+      var savedChat=newChat.save();
+    }
+    else{
+      var savedChat= await ChatModel.findOneAndUpdate({_id:checkResult._id},
+        {
+          members: [req.body.senderId, req.body.receiverId],
+        },
+        {
+          new:true,
+        },
+        )
+    }
+    
+     try{
+      if(savedChat){
           console.log("successfully stored")
           console.log(newChat)
 
@@ -148,11 +162,15 @@ io.on("connection", (socket) => {
           });
           
         }
-      });
+      }
+      catch(err){
+        console.log(err);
+        console.log("error in saving chat");
+      }
+    })
 
  
 
-  })
   socket.on("send-message", (data) => {
     const { receiverId } = data;
     const user = activeUsers.find((user) => user.userId === receiverId);
@@ -166,7 +184,7 @@ io.on("connection", (socket) => {
       chatId:chatId,
       user:{
         _id: senderId
-      },
+       },
       text:text,
     });
       message.save(function(err){

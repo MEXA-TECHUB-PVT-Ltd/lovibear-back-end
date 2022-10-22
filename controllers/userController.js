@@ -167,6 +167,8 @@ exports.blockStatusChange = (req, res) => {
 
 exports.updateUserProfile =  async (req, res) => {
   const userId = req.body.userId;
+  const long= req.body.lang;
+  const lat= req.body.lat;
   
 
   try{
@@ -184,7 +186,9 @@ catch(err){console.log(err)}
 // uploading new picture in to cloudinary
 var userPic;
 try{
-    if(req.file){
+
+    if(lat & long){ // This condition will check for lat and long 
+      if(req.file){
         console.log(req.file)
         const c_result = await cloudinary.uploader.upload(req.file.path)
        console.log(c_result.secure_url)
@@ -283,6 +287,106 @@ try{
         }
       );
     }
+    }
+  else{ //......................................................................................................
+    // this is the case if no user is with long and lat
+    if(req.file){
+      console.log(req.file)
+      const c_result = await cloudinary.uploader.upload(req.file.path)
+     console.log(c_result.secure_url)
+     userPic= {
+      userPicUrl:c_result.secure_url,
+      public_id:c_result.public_id
+     };
+
+
+     // if image is reveived
+     if (userId !== null && typeof userId !== "undefined") {
+      userModel.findByIdAndUpdate(
+        userId,
+        {
+          gender: req.body.gender,
+          dateOfBirth: req.body.dateOfBirth,
+          profileImage: userPic,
+          profession: req.body.profession,
+          fcmToken: req.body.fcmToken,
+          userName: req.body.userName,
+          userEmailAddress: req.body.userEmailAddress,
+          phoneNumber: req.body.phoneNumber,
+          email: req.body.email,
+          signupType: req.body.signupType,
+         
+        },
+        {
+          new: true,
+        },
+        function (err, result) {
+          if (!err) {
+            if (result !== null && typeof result !== "undefined") {
+              res.json({
+                message: "Updated successfully",
+                updatedResult: result,
+              });
+            } else {
+              res.json({
+                message:
+                  "couldn't update , Record with this userId  may be not found",
+              });
+            }
+          } else {
+            res.json({
+              message: "Error updating",
+              Error: err.message,
+            });
+          }
+        }
+      );
+    } else {
+      res.json("userId be null or undefined");
+    }
+      }
+  else{
+    userModel.findByIdAndUpdate(
+      userId,
+      {
+        gender: req.body.gender,
+        dateOfBirth: req.body.dateOfBirth,
+        profession: req.body.profession,
+        fcmToken: req.body.fcmToken,
+        userName: req.body.userName,
+        userEmailAddress: req.body.userEmailAddress,
+        phoneNumber: req.body.phoneNumber,
+        email: req.body.email,
+        signupType: req.body.signupType,
+      },
+      {
+        new: true,
+      },
+      function (err, result) {
+        if (!err) {
+          if (result !== null && typeof result !== "undefined") {
+            res.json({
+              message: "Updated successfully",
+              updatedResult: result,
+            });
+          } else {
+            res.json({
+              message:
+                "couldn't update , Record with this userId  may be not found",
+            });
+          }
+        } else {
+          res.json({
+            message: "Error updating",
+            Error: err.message,
+          });
+        }
+      }
+    );
+  }
+  }
+
+    
     
 }catch(err)
 {console.log(err)}
@@ -555,7 +659,7 @@ exports.getUsersWithinRadius = async (req, res) => {
   if(userRightSwiped.length>0){
     console.log(userRightSwiped)
     
-    const filterByReference = (result, userRightSwiped) => {
+    const filterByReference = async (result, userRightSwiped) => {
       let res = [];
       res = result.filter(el => {7
          return !userRightSwiped.find(element => {
@@ -565,7 +669,7 @@ exports.getUsersWithinRadius = async (req, res) => {
       return res;
    }
 
-   let array= filterByReference(result, userRightSwiped)
+   let array=await filterByReference(result, userRightSwiped)
 
   var filtered = array.filter(function(el) { return el._id.toString() !== userId}); 
   console.log(filtered)
