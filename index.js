@@ -136,7 +136,7 @@ io.on("connection", (socket) => {
     else{
       var savedChat= await ChatModel.findOneAndUpdate({_id:checkResult._id},
         {
-          members: [req.body.senderId, req.body.receiverId],
+          members: [senderId,receiverId],
         },
         {
           new:true,
@@ -147,7 +147,6 @@ io.on("connection", (socket) => {
      try{
       if(savedChat){
           console.log("successfully stored")
-          console.log(newChat)
 
             ChatModel.findOne({
             members: { $all: [senderId, receiverId]},
