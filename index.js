@@ -179,7 +179,7 @@ io.on("connection", (socket) => {
      
 
     const { chatId, senderId } = data;
-    const text=data.text[0].text
+    const text=data.text
     const message = new MessageModel({
       _id:mongoose.Types.ObjectId(),
       chatId:chatId,

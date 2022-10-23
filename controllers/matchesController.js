@@ -1,4 +1,5 @@
-const mongoose=require("mongoose")
+const mongoose=require("mongoose");
+const { aggregate } = require("../models/matchesModel");
 const matchesModel = require("../models/matchesModel")
 
 // exports.createPost=(req,res)=>{
@@ -200,28 +201,61 @@ exports.deleteMatch = (req,res)=>{
 
 exports.getUserMatches = async (req,res)=>{
 
-    const userId= req.params.userId;
+    var ObjectId = require('mongodb').ObjectId
+    let userId= req.params.userId;
+    userId= new ObjectId(userId);
+    const result = await matchesModel.aggregate([
+        {
+            "$match": {
+              $expr: {
+                "$in": [
+                  userId,
+                  {
+                    "$ifNull": [
+                      "$users",
+                      []
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+          ,
 
-    const result= await matchesModel.find({users:{$in:[userId]}})
-    try{
-        if(result){
-            res.json({
-                message:"All matches of this user is:",
-                result:result,
-                statusCode:200
-            })
-        }
-        else{
-            res.json({
-                message:"could not find matches , result is null"
-            })
+        { $lookup: {
+            from: 'users',
+            let: { userId: '$users' },
+            pipeline: [
+              { $match: { $expr: { $in: ["$_id", "$$userId"] } } }
+              // Add additional stages here 
+            ],
+            as:'userDetails'
         }
     }
-    catch(err){
-        res.json({
-            message: "error occurred while fetching user matches",
-            error:err,
-            errorMessage:err.message
-        })
-    }
+    ])
+
+    res.json(result);
+
+    // const result= await matchesModel.find({users:{$in:[userId]}})
+    // try{
+    //     if(result){
+    //         res.json({
+    //             message:"All matches of this user is:",
+    //             result:result,
+    //             statusCode:200
+    //         })
+    //     }
+    //     else{
+    //         res.json({
+    //             message:"could not find matches , result is null"
+    //         })
+    //     }
+    // }
+    // catch(err){
+    //     res.json({
+    //         message: "error occurred while fetching user matches",
+    //         error:err,
+    //         errorMessage:err.message
+    //     })
+    // }
 }

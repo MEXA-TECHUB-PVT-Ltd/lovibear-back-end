@@ -190,10 +190,42 @@ exports.getNotificationsByType = (req,res) =>{
                     errorMessage:error.message
                 })
             }
-            
+        
 
 
         }
+
+        exports.markAllAsRead = async (req,res)=>{
+
+            try{
+                const userId= req.body.userId
+                const readStatus= req.body.readStatus;
+
+               const result=await NotificationModel.updateMany({receiverId: userId} , {readStatus:readStatus} , {new:true})
+
+               if(result){
+                res.json({
+                    message: "Notification Status has been changed successfully for all.",
+                    result: result,
+                    statusCode:201
+                })
+               }
+               else{
+                res.json({
+                    message: "Notification could not be update successfully"
+                })
+               }
+            }
+            catch(error){
+                res.json({
+                    message: "An error occurred while updating",
+                    errorMessage:error.message
+                })
+            }
+        
+
+        }
+
 // exports.getDepartmentsByHospitalId = (req,res) =>{
 //     departmentModel.find({hospitalId:req.params.hospitalId}).populate("hospitalId").exec(function(err,result){
 //         try{

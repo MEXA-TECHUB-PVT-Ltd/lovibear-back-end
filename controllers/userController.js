@@ -656,7 +656,7 @@ exports.getUsersWithinRadius = async (req, res) => {
   
   var userRightSwiped= await swipesModel.find({swipedBy:userId , swipedStatus:"right"});
 
-  if(userRightSwiped.length>0){
+  if(userRightSwiped){
     console.log(userRightSwiped)
     
     const filterByReference = async (result, userRightSwiped) => {

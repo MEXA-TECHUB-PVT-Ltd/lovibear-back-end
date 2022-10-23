@@ -11,5 +11,7 @@ router.delete("/deleteNotification/:notificationId" , controller.deleteNotificat
 router.post("/createNotification" ,controller.createNotification);
 router.post("/getUserNotificationByReadStatus", controller.getUserNotificationsByReadStatus);
 router.put("/changeNotificationReadStatus", controller.changeNotificationStatus);
+router.put("/markAllAsRead", controller.markAllAsRead);
+
 
 module.exports = router;
