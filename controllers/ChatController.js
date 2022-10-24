@@ -1,5 +1,6 @@
 const ChatModel = require("../models/chatModel.js");
 const mongoose = require("mongoose");
+const messageModel = require("../models/messageModel")
 
 exports.createChat = async (req, res) => {
 
@@ -41,15 +42,87 @@ exports.createChat = async (req, res) => {
 };
 
 exports.userChats = async (req, res) => {
+  var ObjectId = require('mongodb').ObjectId
+  let userId= req.params.userId;
+    userId= new ObjectId(userId);
   try {
-    const chat = await ChatModel.find({
-      members: { $in: [req.params.userId] },
-    });
-    res.status(200).json(chat);
-  } catch (error) {
-    res.status(500).json(error);
+    const result = await ChatModel.aggregate([
+      {
+          "$match": {
+            $expr: {
+              "$in": [
+                userId,
+                {
+                  "$ifNull": [
+                    "$members",
+                    []
+                  ]
+                }
+              ]
+            }
+          }
+        }
+        ,
+
+      { $lookup: {
+        from: 'users',
+        let: { userId: '$members' },
+        pipeline: [
+          { $match: { $expr: { $in: ["$_id", "$$userId"] } } }
+          // Add additional stages here 
+        ],
+        as:'userDetails'
+    }
+    }
+  ])
+  
+
+
+  if(result){
+    console.log(result[0]._id)
+    const getMessage = await messageModel.findOne({chatId: result[0]._id}).limit(1).sort({$natural:-1});
+    console.log(getMessage)
+    if(getMessage){
+
+      res.json({
+        message: "chat Found For this User",
+        Result:result,
+        message2:"Last message also found for this user",
+        lastMessageFoundStatus:true,
+        lastMessage:getMessage,
+        
+        
+      })
+    }
+    else{
+      res.json({
+        message: "chat Found For this User",
+        Result:result,
+        message2:"Last message not found for this chat of user",
+        lastMessageFoundStatus:false
+        
+      
+      })
+      
+    }
+    
   }
-};
+  else{
+    res.json({
+      message:"Did not found any chat of this user",
+      Status:false,
+    })
+  }
+
+}
+catch(err){
+  res.json({
+    message:"Error Occurred",
+    errorMessage:err.message
+  })
+}
+}
+
 
 exports.findChat = async (req, res) => {
   try {
