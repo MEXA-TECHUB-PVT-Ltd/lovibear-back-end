@@ -78,7 +78,7 @@ exports.userChats = async (req, res) => {
   
 
 
-  if(result){
+  if(result,length>0){
     console.log(result[0]._id)
     const getMessage = await messageModel.findOne({chatId: result[0]._id}).limit(1).sort({$natural:-1});
     console.log(getMessage)
@@ -110,6 +110,7 @@ exports.userChats = async (req, res) => {
   else{
     res.json({
       message:"Did not found any chat of this user",
+      result:result,
       Status:false,
     })
   }
