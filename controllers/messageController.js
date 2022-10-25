@@ -7,9 +7,7 @@ exports.addMessage =async (req, res) => {
   const message = new MessageModel({
     _id:mongoose.Types.ObjectId(),
     chatId:chatId,
-    user: {
-      _id:senderId
-    },
+    senderId:senderId,
     text: text,
     msg_type:msg_type,
     public_id:public_id
