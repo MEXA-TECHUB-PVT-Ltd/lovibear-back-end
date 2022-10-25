@@ -1,6 +1,7 @@
 const ChatModel = require("../models/chatModel.js");
 const mongoose = require("mongoose");
-const messageModel = require("../models/messageModel")
+const messageModel = require("../models/messageModel");
+const { AddOnResultContext } = require("twilio/lib/rest/api/v2010/account/recording/addOnResult.js");
 
 exports.createChat = async (req, res) => {
 
@@ -78,40 +79,18 @@ exports.userChats = async (req, res) => {
   
 
 
-  if(result,length>0){
-    console.log(result[0]._id)
-    const getMessage = await messageModel.findOne({chatId: result[0]._id}).limit(1).sort({$natural:-1});
-    console.log(getMessage)
-    if(getMessage){
+  if(result.length>0){
+  
+    res.json({
+      message: "chats of this user",
+      result:result,
 
-      res.json({
-        message: "chat Found For this User",
-        Result:result,
-        message2:"Last message also found for this user",
-        lastMessageFoundStatus:true,
-        lastMessage:getMessage,
-        
-        
-      })
-    }
-    else{
-      res.json({
-        message: "chat Found For this User",
-        Result:result,
-        message2:"Last message not found for this chat of user",
-        lastMessageFoundStatus:false
-        
-      
-      })
-      
-    }
-    
+    })
   }
   else{
     res.json({
-      message:"Did not found any chat of this user",
-      result:result,
-      Status:false,
+      message:"could not found chats of this user",
+      result:result
     })
   }
 

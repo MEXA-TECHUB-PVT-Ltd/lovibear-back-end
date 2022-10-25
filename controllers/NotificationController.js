@@ -34,8 +34,7 @@ exports.getAllNotifications = async(req,res)=>{
 exports.getNotificationsByType = (req,res) =>{
     const type= req.body.type;
     const userId= req.body.userId;
-    NotificationModel.find({receiverType:type , receiverId:userId},(function(err,result){
-
+    NotificationModel.find({receiverType:type , receiverId:userId}).populate("receiverId").populate("senderId").exec(function(err,result){
         let array = [];
         array= result.reverse();
 
@@ -53,7 +52,8 @@ exports.getNotificationsByType = (req,res) =>{
             })
         }
     })
-    )}
+}
+    
 
     exports.deleteNotification = (req,res)=>{
 

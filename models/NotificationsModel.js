@@ -4,9 +4,11 @@ const NotificationSchema= new mongoose.Schema({
 _id:mongoose.Schema.Types.ObjectId,
 senderId: {
     type:mongoose.Schema.Types.ObjectId,
+    ref:"user"
 },
 receiverId:{
-    type:mongoose.Schema.Types.ObjectId
+    type:mongoose.Schema.Types.ObjectId,
+    ref: "user"
 },
 senderType:{
     type:String,
